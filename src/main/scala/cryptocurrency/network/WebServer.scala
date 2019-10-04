@@ -6,7 +6,6 @@ import akka.stream.ActorMaterializer
 import cryptocurrency.network.NetworkConfig.{httpHost, httpPort}
 
 import scala.concurrent.ExecutionContextExecutor
-import scala.io.StdIn
 
 object WebServer extends NetworkRouting {
 
@@ -17,14 +16,7 @@ object WebServer extends NetworkRouting {
   val actor: ActorRef = system.actorOf(NetworkActor.props, "cryptocurrency-server")
 
   def run(): Unit = {
-    val bindingFuture = Http().bindAndHandle(route, httpHost, httpPort)
-
+    Http().bindAndHandle(route, httpHost, httpPort)
     println(s"Server running at $httpHost:$httpPort")
-
-    StdIn.readLine()
-
-    bindingFuture
-      .flatMap(_.unbind())
-      .onComplete(_ => system.terminate())
   }
 }

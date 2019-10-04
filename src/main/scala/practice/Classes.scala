@@ -24,6 +24,4 @@ object Classes extends App {
 
   val account = new BankAccount()
   account.amount_=(100)
-
-
 }
