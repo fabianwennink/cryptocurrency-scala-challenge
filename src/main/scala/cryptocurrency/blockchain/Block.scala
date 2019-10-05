@@ -3,9 +3,14 @@ package cryptocurrency.blockchain
 import cryptocurrency.mining.Miner
 
 // Serves as a single mined block in the full chain.
-case class Block(index: Int, previousHash: String, nonce: Long, timestamp: Long = System.currentTimeMillis(), tail: BlockChain) extends BlockChain {
-  val hash: String = Miner.createHash(index + previousHash + nonce + timestamp)
+case class Block(index: Int, previousHash: String, nonce: Long, timestamp: Long, previous: BlockChain) extends BlockChain {
+  val hash: String = Miner.createHash(previousHash ++ nonce.toString)
 }
 
 // Genesis block serves as the first block in the chain
-object GenesisBlock extends Block(0, "0", 0, 0, null)
+case object GenesisBlock extends BlockChain {
+  val index: Int = 0
+  val hash: String = "1"
+  val nonce: Long = 82
+  val timestamp: Long = System.currentTimeMillis()
+}

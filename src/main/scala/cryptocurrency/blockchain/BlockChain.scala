@@ -7,9 +7,9 @@ trait BlockChain {
   val nonce: Long
   val timestamp: Long
 
-  def ::(chain: BlockChain): Either[Block, BlockChain] = chain match {
-    case block:Block => Left(Block(block.index, hash, block.nonce, block.timestamp, this))
-    case _ => Right(chain) // If an invalid block is given, simply return it.
+  def ::(chain: BlockChain): BlockChain = chain match {
+    case block:Block => Block(block.index, hash, block.nonce, block.timestamp, this)
+    case _ => chain // If an invalid block is given, simply return it.
   }
 }
 
@@ -17,13 +17,10 @@ trait BlockChain {
 object BlockChain {
 
   def apply[T](chain: BlockChain*): BlockChain = {
-
-    // If the chain is empty, start the chain with the Genesis block
     if (chain.isEmpty)
-      GenesisBlock
+      GenesisBlock // If the chain is empty, start the chain with the Genesis block
     else {
-      val block = chain.head
-      Block(block.index, block.hash, block.nonce, block.timestamp, apply(chain.tail: _*))
+      Block(chain.head.index, chain.head.hash, chain.head.nonce, chain.head.timestamp, apply(chain.tail: _*))
     }
   }
 }
