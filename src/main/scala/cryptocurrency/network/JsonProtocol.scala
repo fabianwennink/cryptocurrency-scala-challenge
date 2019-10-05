@@ -1,14 +1,14 @@
-package cryptocurrency.mining
+package cryptocurrency.network
 
 import cryptocurrency.blockchain.{Block, BlockChain, GenesisBlock}
 import spray.json._
 
-object JsonSupport extends DefaultJsonProtocol {
+object JsonProtocol extends DefaultJsonProtocol {
 
   implicit object BlockJsonFormat extends RootJsonFormat[Block] {
-    def read(json: JsValue): Block = json.asJsObject.getFields("index", "hash", "nonce", "timestamp", "previous") match {
-      case Seq(JsNumber(index), JsString(previousHash), JsNumber(nonce), JsNumber(timestamp), tail) =>
-        Block(index.toInt, previousHash, nonce.toLong, timestamp.toLong, tail.convertTo(BlockChainJsonFormat))
+    def read(json: JsValue): Block = json.asJsObject.getFields("index", "hash", "nonce", "difficulty", "timestamp", "previous") match {
+      case Seq(JsNumber(index), JsString(previousHash), JsNumber(nonce), JsNumber(difficulty), JsNumber(timestamp), tail) =>
+        Block(index.toInt, previousHash, nonce.toLong, difficulty.toInt, timestamp.toLong, tail.convertTo(BlockChainJsonFormat))
       case _ => throw DeserializationException("Invalid Block")
     }
 
@@ -16,6 +16,7 @@ object JsonSupport extends DefaultJsonProtocol {
       "index" -> JsNumber(block.index),
       "hash" -> JsString(block.previousHash),
       "nonce" -> JsNumber(block.nonce),
+      "difficulty" -> JsNumber(block.difficulty),
       "timestamp" -> JsNumber(block.timestamp),
       "previous" -> BlockChainJsonFormat.write(block.previous)
     )
@@ -35,6 +36,7 @@ object JsonSupport extends DefaultJsonProtocol {
         "index" -> JsNumber(GenesisBlock.index),
         "hash" -> JsString(GenesisBlock.hash),
         "nonce" -> JsNumber(GenesisBlock.nonce),
+        "difficulty" -> JsNumber(GenesisBlock.difficulty),
         "timestamp" -> JsNumber(GenesisBlock.timestamp)
       )
     }
