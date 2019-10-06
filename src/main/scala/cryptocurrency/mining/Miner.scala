@@ -1,37 +1,46 @@
 package cryptocurrency.mining
 
-import cryptocurrency.blockchain.{Block, BlockChain, BlockChainState, GenesisBlock}
+import cryptocurrency.blockchain.{Block, BlockChain, BlockChainState, BlockHeader, GenesisBlock}
 
 import scala.annotation.tailrec
-import cryptocurrency.network.NetworkConfig.{miningDifficultyIncreaseRate, blockReward}
+import cryptocurrency.network.NetworkConfig.{blockReward, defaultMiningDifficulty, miningDifficultyIncreaseRate}
+import spray.json._
+import cryptocurrency.network.JsonProtocol._
 
 object Miner {
 
-  def generateNewBlock(state: BlockChainState, reward: Int = blockReward): BlockChain = {
-    val diff = Miner.calculateDifficulty(state.blockChain)
-    val nonce = Miner.generateProofOfWork(state.blockChain.hash, diff)
+  def generateNewBlock(state: BlockChainState, reward: Int = blockReward, timestamp: Long = System.currentTimeMillis()): BlockChain = {
+    val diff = calculateDifficulty(state.blockChain)
+    val nonce = generateProofOfWork(state.blockChain.header.hash, timestamp, diff)
+    val hash = hashBlock(header)
 
-    Block(state.blockChain.index + 1, state.blockChain.hash, nonce, diff, reward, System.currentTimeMillis(), previous = state.blockChain) :: state.blockChain
+    val header = generateNewBlockHeader(state.blockChain.header.hash, nonce, diff, reward, timestamp)
+
+    Block(state.blockChain.index + 1, hash, nonce, diff, reward, timestamp, state.blockChain) :: state.blockChain
+  }
+
+  private def generateNewBlockHeader(hash: String, nonce: Long, difficulty: Int, reward: Int, timestamp: Long): BlockHeader = {
+    BlockHeader(hash, nonce, difficulty, reward, timestamp)
   }
 
   // Does an attempt to get the proof of work (or nonce) of the previous hash.
   // The difficulty increases the hashing algorithms difficulty, which in turn will make
   // the mining process take significantly longer.
-  def generateProofOfWork(lastHash: String, difficulty: Int): Long = {
+  def generateProofOfWork(lastHash: String, timestamp: Long, difficulty: Int): Long = {
 
     @tailrec
-    def proofOfWorkHelper(lastHash: String, difficulty: Int, nonce: Long): Long = {
-      if (validProofOfWork(lastHash, nonce, difficulty)) nonce
-      else proofOfWorkHelper(lastHash, difficulty, nonce + 1)
+    def proofOfWorkHelper(lastHash: String, difficulty: Int, nonce: Long, timestamp: Long): Long = {
+      if (validProofOfWork(lastHash, nonce, difficulty, timestamp)) nonce
+      else proofOfWorkHelper(lastHash, difficulty, nonce + 1, timestamp)
     }
 
-    proofOfWorkHelper(lastHash, difficulty, 0)
+    proofOfWorkHelper(lastHash, difficulty, 0, timestamp)
   }
 
   // Validates if the given nonce belongs to the given hash.
-  def validProofOfWork(lastHash: String, nonce: Long, difficulty: Int): Boolean = {
-    val guessHash = Crypto.hash(lastHash ++ nonce.toString)
-    (guessHash take difficulty) == ("0" * difficulty)
+  def validProofOfWork(lastHash: String, nonce: Long, difficulty: Int, timestamp: Long): Boolean = {
+    val candidate = createHash(lastHash ++ nonce.toString ++ timestamp.toString)
+    (candidate take difficulty) == ("0" * difficulty)
   }
 
   // Validates the integrity of the whole chain. If somehow the chain
@@ -44,7 +53,7 @@ object Miner {
         val previous: BlockChain = b.previous
 
         // Check if the index order is correct and if the hash and nonce are correct
-        if(!(previous.index + 1).equals(b.index) || !validProofOfWork(previous.hash, b.nonce, b.difficulty)) false
+        if(!(previous.index + 1).equals(b.index) || !validProofOfWork(previous.hash, b.nonce, b.difficulty, b.timestamp)) false
         else validateChainHelper(previous)
       case GenesisBlock => true
       case _ => false // If an unknown object is found, return false by default
@@ -55,8 +64,11 @@ object Miner {
 
   // Calculates the difficulty based on the amount of blocks present in the chain.
   // With the current implementation, the difficulty increases with every X blocks mined.
-  def calculateDifficulty(chain: BlockChain): Int = Math.floor(chain.index / miningDifficultyIncreaseRate).toInt + 1
+  def calculateDifficulty(chain: BlockChain): Int = Math.floor(chain.index / miningDifficultyIncreaseRate).toInt + defaultMiningDifficulty
 
-  def createHash(time: Long): String = Crypto.hash(time.toString)
+  def hashBlock(blockHeader: BlockHeader): String = {
+    blockHeader.toJson.toString
+  }
+
   def createHash(data: String): String = Crypto.hash(data)
 }

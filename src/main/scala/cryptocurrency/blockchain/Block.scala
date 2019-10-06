@@ -1,18 +1,11 @@
 package cryptocurrency.blockchain
 
-import cryptocurrency.mining.Miner
-
 // Serves as a single mined block in the full chain.
-case class Block(index: Int, previousHash: String, nonce: Long, difficulty: Int, reward: Int, timestamp: Long, previous: BlockChain) extends BlockChain {
-  val hash: String = Miner.createHash(previousHash ++ nonce.toString)
-}
+case class BlockHeader(hash: String, nonce: Long, difficulty: Int, reward: Int, timestamp: Long)
+case class Block(index: Int, header: BlockHeader, previous: BlockChain) extends BlockChain
 
 // Genesis block serves as the first block in the chain
 case object GenesisBlock extends BlockChain {
   val index: Int = 0
-  val hash: String = "1"
-  val nonce: Long = 82
-  val difficulty: Int = 1
-  val reward: Int = 0
-  val timestamp: Long = System.currentTimeMillis()
+  val header: BlockHeader = BlockHeader("0000000000000000000000000000000000000000000000000000000000000000", 0, 0, 0, System.currentTimeMillis())
 }

@@ -23,10 +23,10 @@ class NetworkActor extends Actor {
       // Overwrite the current state
       context become active(BlockChainState(newBlock))
 
-      val logText = s"Mined block ${newBlock.index} with hash/nonce ${newBlock.hash}/${newBlock.nonce} (difficulty ${newBlock.difficulty})";
+      val logText = s"Mined block ${newBlock.index} with hash/nonce ${newBlock.header.hash}/${newBlock.header.nonce} (difficulty ${newBlock.header.difficulty})";
 
       // Log the mined block to the console
-      log(logText)
+      //log(logText)
 
       // Send the hash to the actor
       sender() ! MineEvent(logText)

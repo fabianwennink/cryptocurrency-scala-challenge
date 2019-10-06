@@ -3,14 +3,10 @@ package cryptocurrency.blockchain
 trait BlockChain {
 
   val index: Int
-  val hash: String
-  val nonce: Long
-  val difficulty: Int
-  val reward: Int
-  val timestamp: Long
+  val header: BlockHeader
 
   def ::(chain: BlockChain): BlockChain = chain match {
-    case block:Block => Block(block.index, hash, block.nonce, block.difficulty, block.reward, block.timestamp, this)
+    case block:Block => Block(block.index, block.header, this)
     case _ => chain // If an invalid block is given, simply return it.
   }
 }
@@ -23,7 +19,7 @@ object BlockChain {
       GenesisBlock // If the chain is empty, start the chain with the Genesis block
     else {
       val block = chain.head
-      Block(block.index, block.hash, block.nonce, block.difficulty, block.reward, block.timestamp, apply(chain.tail: _*))
+      Block(block.index, block.header, apply(chain.tail: _*))
     }
   }
 }
