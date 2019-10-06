@@ -3,16 +3,15 @@ package cryptocurrency.mining
 import cryptocurrency.blockchain.{Block, BlockChain, BlockChainState, GenesisBlock}
 
 import scala.annotation.tailrec
+import cryptocurrency.network.NetworkConfig.{miningDifficultyIncreaseRate, blockReward}
 
 object Miner {
 
-  val miningDifficultyIncreaseRate = 25
-
-  def generateNewBlock(state: BlockChainState): BlockChain = {
+  def generateNewBlock(state: BlockChainState, reward: Int = blockReward): BlockChain = {
     val diff = Miner.calculateDifficulty(state.blockChain)
     val nonce = Miner.generateProofOfWork(state.blockChain.hash, diff)
 
-    Block(state.blockChain.index + 1, state.blockChain.hash, nonce, diff, System.currentTimeMillis(), previous = state.blockChain) :: state.blockChain
+    Block(state.blockChain.index + 1, state.blockChain.hash, nonce, diff, reward, System.currentTimeMillis(), previous = state.blockChain) :: state.blockChain
   }
 
   // Does an attempt to get the proof of work (or nonce) of the previous hash.

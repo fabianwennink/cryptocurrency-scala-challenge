@@ -6,10 +6,11 @@ trait BlockChain {
   val hash: String
   val nonce: Long
   val difficulty: Int
+  val reward: Int
   val timestamp: Long
 
   def ::(chain: BlockChain): BlockChain = chain match {
-    case block:Block => Block(block.index, hash, block.nonce, block.difficulty, block.timestamp, this)
+    case block:Block => Block(block.index, hash, block.nonce, block.difficulty, block.reward, block.timestamp, this)
     case _ => chain // If an invalid block is given, simply return it.
   }
 }
@@ -21,7 +22,8 @@ object BlockChain {
     if (chain.isEmpty)
       GenesisBlock // If the chain is empty, start the chain with the Genesis block
     else {
-      Block(chain.head.index, chain.head.hash, chain.head.nonce, chain.head.difficulty, chain.head.timestamp, apply(chain.tail: _*))
+      val block = chain.head
+      Block(block.index, block.hash, block.nonce, block.difficulty, block.reward, block.timestamp, apply(chain.tail: _*))
     }
   }
 }

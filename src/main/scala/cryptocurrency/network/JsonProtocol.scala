@@ -6,9 +6,9 @@ import spray.json._
 object JsonProtocol extends DefaultJsonProtocol {
 
   implicit object BlockJsonFormat extends RootJsonFormat[Block] {
-    def read(json: JsValue): Block = json.asJsObject.getFields("index", "hash", "nonce", "difficulty", "timestamp", "previous") match {
-      case Seq(JsNumber(index), JsString(previousHash), JsNumber(nonce), JsNumber(difficulty), JsNumber(timestamp), tail) =>
-        Block(index.toInt, previousHash, nonce.toLong, difficulty.toInt, timestamp.toLong, tail.convertTo(BlockChainJsonFormat))
+    def read(json: JsValue): Block = json.asJsObject.getFields("index", "hash", "nonce", "difficulty", "reward", "timestamp", "previous") match {
+      case Seq(JsNumber(index), JsString(previousHash), JsNumber(nonce), JsNumber(difficulty), JsNumber(reward), JsNumber(timestamp), tail) =>
+        Block(index.toInt, previousHash, nonce.toLong, difficulty.toInt, reward.toInt, timestamp.toLong, tail.convertTo(BlockChainJsonFormat))
       case _ => throw DeserializationException("Invalid Block")
     }
 
@@ -17,6 +17,7 @@ object JsonProtocol extends DefaultJsonProtocol {
       "hash" -> JsString(block.previousHash),
       "nonce" -> JsNumber(block.nonce),
       "difficulty" -> JsNumber(block.difficulty),
+      "reward" -> JsNumber(block.reward),
       "timestamp" -> JsNumber(block.timestamp),
       "previous" -> BlockChainJsonFormat.write(block.previous)
     )
@@ -37,6 +38,7 @@ object JsonProtocol extends DefaultJsonProtocol {
         "hash" -> JsString(GenesisBlock.hash),
         "nonce" -> JsNumber(GenesisBlock.nonce),
         "difficulty" -> JsNumber(GenesisBlock.difficulty),
+        "reward" -> JsNumber(GenesisBlock.reward),
         "timestamp" -> JsNumber(GenesisBlock.timestamp)
       )
     }
