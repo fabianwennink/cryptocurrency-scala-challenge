@@ -1,5 +1,8 @@
 package cryptocurrency.blockchain
 
+import cryptocurrency.network.JsonProtocol
+import spray.json._
+
 trait BlockChain {
 
   val index: Int

@@ -1,6 +1,6 @@
 package cryptocurrency.mining
 
-import cryptocurrency.blockchain.{Block, BlockChain, BlockChainState, BlockHeader, GenesisBlock}
+import cryptocurrency.blockchain.{Block, BlockChain, BlockChainState, BlockHeader, GenesisBlock, Transaction}
 
 import scala.annotation.tailrec
 import cryptocurrency.network.NetworkConfig.{blockReward, defaultMiningDifficulty, miningDifficultyIncreaseRate}
@@ -12,17 +12,18 @@ object Miner {
   // Generates a new Block for the BlockChain. When mining for the solution, the header of the
   // previous block, the candidate nonce and the current timestamp (of the request, not of the attempt) is used
   // to form a hash.
-  def generateNewBlock(state: BlockChainState, reward: Int = blockReward, timestamp: Long = System.currentTimeMillis()): BlockChain = {
+  def generateNewBlock(state: BlockChainState, pendingTransactions: List[Transaction], reward: Int = blockReward, timestamp: Long = System.currentTimeMillis()): BlockChain = {
     val diff = calculateDifficulty(state.blockChain)
     val nonce = generateProofOfWork(state.blockChain.header, timestamp, diff)
     val hash = createHash(state.blockChain.header, nonce.toString ++ timestamp.toString)
-    val header = generateNewBlockHeader(hash, nonce, diff, reward, timestamp)
+    val merkle = createMerkle(pendingTransactions)
+    val header = generateNewBlockHeader(hash, nonce, merkle, diff, reward, timestamp)
 
-    Block(state.blockChain.index + 1, header, List.empty, state.blockChain) :: state.blockChain
+    Block(state.blockChain.index + 1, header, pendingTransactions, state.blockChain) :: state.blockChain
   }
 
-  private def generateNewBlockHeader(hash: String, nonce: Long, difficulty: Int, reward: Int, timestamp: Long): BlockHeader = {
-    BlockHeader(hash, nonce, difficulty, reward, timestamp)
+  private def generateNewBlockHeader(hash: String, nonce: Long, merkle: String, difficulty: Int, reward: Int, timestamp: Long): BlockHeader = {
+    BlockHeader(hash, nonce, merkle, difficulty, reward, timestamp)
   }
 
   // Does an attempt to get the proof of work (or nonce) of the previous hash.
@@ -64,20 +65,25 @@ object Miner {
     validateChainHelper(chain.head)
   }
 
-  def getHeaders(chain: BlockChain): List[BlockHeader] = {
-
-    @tailrec
-    def loop(chain: BlockChain, acc: List[BlockHeader]): List[BlockHeader] = chain match {
-      case b: Block => loop(b.previous, b.header :: acc)
-      case GenesisBlock | _ => acc
-    }
-
-    loop(chain, List.empty)
-  }
+//  def getHeaders(chain: BlockChain): List[BlockHeader] = {
+//
+//    @tailrec
+//    def loop(chain: BlockChain, acc: List[BlockHeader]): List[BlockHeader] = chain match {
+//      case b: Block => loop(b.previous, b.header :: acc)
+//      case GenesisBlock | _ => acc
+//    }
+//
+//    loop(chain, List.empty)
+//  }
 
   // Calculates the difficulty based on the amount of blocks present in the chain.
   // With the current implementation, the difficulty increases with every X blocks mined.
   def calculateDifficulty(chain: BlockChain): Int = Math.floor(chain.index / miningDifficultyIncreaseRate).toInt + defaultMiningDifficulty
 
   def createHash(block: BlockHeader, data: String): String = Crypto.hash(block.toJson.toString ++ data)
+
+  def createMerkle(transactions: List[Transaction]): String = {
+    if(transactions.nonEmpty) Crypto.hash(transactions.map(_.toJson).toString)
+    else ""
+  }
 }

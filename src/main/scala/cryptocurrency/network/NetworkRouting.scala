@@ -10,12 +10,11 @@ import akka.util.Timeout
 import akka.pattern.ask
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import cryptocurrency.blockchain.BlockChain
-import cryptocurrency.network.NetworkActor.{MineEvent, RegisterWalletEvent, RequestBlockChainEvent, VerifyIntegrityEvent}
+import cryptocurrency.blockchain.{BlockChain, Transaction}
+import cryptocurrency.network.NetworkActor.{AddTransactionEvent, AddTransactionSuccessEvent, MineEvent, RegisterWalletEvent, RequestBlockChainEvent, VerifyIntegrityEvent}
 import JsonProtocol._
-import akka.http.scaladsl.model.HttpHeader.ParsingResult.Ok
-
-import scala.util.Random
+import cryptocurrency.network.JsonProtocol
+import spray.json._
 
 trait NetworkRouting extends SprayJsonSupport {
 
@@ -36,16 +35,26 @@ trait NetworkRouting extends SprayJsonSupport {
           complete(StatusCodes.OK, result)
         }
       } ~
-      path("verify") {
+      path("blockchain" / "verify") {
         val chainFuture: Future[VerifyIntegrityEvent] = (WebServer.actor ? VerifyIntegrityEvent).mapTo[VerifyIntegrityEvent]
         onSuccess(chainFuture) { result =>
           complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Chain integrity status: ${ (if( result.status ) "Valid" else "Invalid") }"))
         }
       } ~
-      path("getWallet") {
+      path("wallet") {
         val walletFuture: Future[RegisterWalletEvent] = (WebServer.actor ? RegisterWalletEvent).mapTo[RegisterWalletEvent]
         onSuccess(walletFuture) { result =>
           complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Wallet name: ${ result.wallet.address }"))
+        }
+      }
+    } ~
+    post {
+      path("transaction") {
+        entity(as[Transaction]) { transaction =>
+          val transactionFuture: Future[AddTransactionSuccessEvent] = (WebServer.actor ? AddTransactionEvent(transaction)).mapTo[AddTransactionSuccessEvent]
+          onSuccess(transactionFuture) { result =>
+            complete(StatusCodes.Created, result.message)
+          }
         }
       }
     }
