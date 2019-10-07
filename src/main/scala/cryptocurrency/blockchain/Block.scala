@@ -7,5 +7,8 @@ case class Block(index: Int, header: BlockHeader, previous: BlockChain) extends 
 // Genesis block serves as the first block in the chain
 case object GenesisBlock extends BlockChain {
   val index: Int = 0
-  val header: BlockHeader = BlockHeader("0000000000000000000000000000000000000000000000000000000000000000", 0, 0, 0, System.currentTimeMillis())
+  val header: BlockHeader = BlockHeader(
+    "0000000000000000000000000000000000000000000000000000000000000000",
+    0, 0, 0, System.currentTimeMillis()
+  )
 }

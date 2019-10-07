@@ -64,7 +64,9 @@ object Miner {
 
   // Calculates the difficulty based on the amount of blocks present in the chain.
   // With the current implementation, the difficulty increases with every X blocks mined.
-  def calculateDifficulty(chain: BlockChain): Int = Math.floor(chain.index / miningDifficultyIncreaseRate).toInt + defaultMiningDifficulty
+  def calculateDifficulty(chain: BlockChain): Int = {
+    Math.floor(chain.index / miningDifficultyIncreaseRate).toInt + defaultMiningDifficulty
+  }
 
   def hashBlock(blockHeader: BlockHeader): String = {
     blockHeader.toJson.toString
