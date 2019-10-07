@@ -15,4 +15,6 @@ object NetworkConfig {
     else option
   }
   implicit val blockReward: Int = config.getInt("mining.block-reward")
+
+  implicit val walletNamePrefix: String = config.getString("wallet.name-prefix")
 }

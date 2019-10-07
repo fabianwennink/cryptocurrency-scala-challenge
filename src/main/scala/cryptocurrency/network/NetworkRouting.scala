@@ -11,8 +11,11 @@ import akka.pattern.ask
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import cryptocurrency.blockchain.BlockChain
-import cryptocurrency.network.NetworkActor.{MineEvent, RequestBlockChainEvent, VerifyIntegrityEvent}
+import cryptocurrency.network.NetworkActor.{MineEvent, RegisterWalletEvent, RequestBlockChainEvent, VerifyIntegrityEvent}
 import JsonProtocol._
+import akka.http.scaladsl.model.HttpHeader.ParsingResult.Ok
+
+import scala.util.Random
 
 trait NetworkRouting extends SprayJsonSupport {
 
@@ -37,6 +40,12 @@ trait NetworkRouting extends SprayJsonSupport {
         val chainFuture: Future[VerifyIntegrityEvent] = (WebServer.actor ? VerifyIntegrityEvent).mapTo[VerifyIntegrityEvent]
         onSuccess(chainFuture) { result =>
           complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Chain integrity status: ${ (if( result.status ) "Valid" else "Invalid") }"))
+        }
+      } ~
+      path("getWallet") {
+        val walletFuture: Future[RegisterWalletEvent] = (WebServer.actor ? RegisterWalletEvent).mapTo[RegisterWalletEvent]
+        onSuccess(walletFuture) { result =>
+          complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Wallet name: ${ result.wallet.address }"))
         }
       }
     }
