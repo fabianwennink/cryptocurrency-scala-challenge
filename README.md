@@ -1,8 +1,8 @@
-# Learning Scala - HAN
+# Scala coding challenge: Cryptocurrency
 
 Scala implementation of a very over-simplified crypto-currency.
 
-Blog post: https://www.fabianwennink.nl/projects/Learning-Scala
+Blog post **(Dutch)**: https://www.fabianwennink.nl/projects/Learning-Scala
 
 **Note: This is not a real crypto-currency! The code is most likely not secure 
 and should thus not be used in ANY production environment. The project was merely 
