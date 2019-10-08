@@ -11,7 +11,7 @@ import akka.pattern.ask
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import cryptocurrency.blockchain.{BlockChain, Transaction}
-import cryptocurrency.network.NetworkActor.{AddTransactionEvent, AddTransactionSuccessEvent, MineEvent, RegisterWalletEvent, RequestBlockChainEvent, VerifyIntegrityEvent}
+import cryptocurrency.network.NetworkActorEvents.{AddTransactionEvent, AddTransactionSuccessEvent, GetWalletsEvent, MineEvent, MineSuccessEvent, RegisterWalletEvent, RequestBlockChainEvent, VerifyIntegrityEvent}
 import JsonProtocol._
 import cryptocurrency.network.JsonProtocol
 import spray.json._
@@ -24,9 +24,11 @@ trait NetworkRouting extends SprayJsonSupport {
   val route: Route =
     get {
       path("mine") {
-        val chainFuture: Future[MineEvent] = (WebServer.actor ? MineEvent).mapTo[MineEvent]
-        onSuccess(chainFuture) { result =>
-          complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"${ result.message }"))
+        parameter('address) { address =>
+          val chainFuture: Future[MineSuccessEvent] = (WebServer.actor ? MineEvent(address)).mapTo[MineSuccessEvent]
+          onSuccess(chainFuture) { result =>
+            complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"${ result.message }"))
+          }
         }
       } ~
       path("blockchain") {
@@ -42,9 +44,20 @@ trait NetworkRouting extends SprayJsonSupport {
         }
       } ~
       path("wallet") {
+        parameter('address) { address =>
+          complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Not yet implemented"))
+        }
+      } ~
+      path("wallet" / "generate") {
         val walletFuture: Future[RegisterWalletEvent] = (WebServer.actor ? RegisterWalletEvent).mapTo[RegisterWalletEvent]
         onSuccess(walletFuture) { result =>
           complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Wallet name: ${ result.wallet.address }"))
+        }
+      } ~
+      path("wallet" / "all") {
+        val walletFuture: Future[GetWalletsEvent] = (WebServer.actor ? GetWalletsEvent).mapTo[GetWalletsEvent]
+        onSuccess(walletFuture) { result =>
+          complete(StatusCodes.OK, result.wallets)
         }
       }
     } ~

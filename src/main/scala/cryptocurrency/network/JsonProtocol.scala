@@ -79,9 +79,9 @@ object JsonProtocol extends DefaultJsonProtocol {
   // BlockHeader JSON object
   implicit object BlockHeaderJsonFormat extends RootJsonFormat[BlockHeader] {
     override def read(json: JsValue): BlockHeader = {
-      json.asJsObject.getFields("hash", "nonce", "merkle", "difficulty", "reward", "timestamp") match {
-        case Seq(JsString(previousHash), JsNumber(nonce), JsString(merkle), JsNumber(difficulty), JsNumber(reward),  JsNumber(timestamp)) =>
-          BlockHeader(previousHash, nonce.toInt, merkle, difficulty.toInt, reward.toInt, timestamp.toLong)
+      json.asJsObject.getFields("hash", "nonce", "minedBy", "merkleRoot", "difficulty", "reward", "timestamp") match {
+        case Seq(JsString(previousHash), JsNumber(nonce), JsString(minedBy), JsString(merkleRoot), JsNumber(difficulty), JsNumber(reward),  JsNumber(timestamp)) =>
+          BlockHeader(previousHash, nonce.toInt, minedBy, merkleRoot, difficulty.toInt, reward.toInt, timestamp.toLong)
         case Seq() => throw DeserializationException("Invalid BlockHeader")
       }
     }
@@ -89,7 +89,8 @@ object JsonProtocol extends DefaultJsonProtocol {
     override def write(header: BlockHeader): JsValue = JsObject(
       "hash" -> JsString(header.hash),
       "nonce" -> JsNumber(header.nonce),
-      "merkle" -> JsString(header.merkle),
+      "mined_by" -> JsString(header.minedBy),
+      "merkle_root" -> JsString(header.merkleRoot),
       "difficulty" -> JsNumber(header.difficulty),
       "reward" -> JsNumber(header.reward),
       "timestamp" -> JsNumber(header.timestamp)

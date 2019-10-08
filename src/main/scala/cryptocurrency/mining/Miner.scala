@@ -1,6 +1,6 @@
 package cryptocurrency.mining
 
-import cryptocurrency.blockchain.{Block, BlockChain, BlockChainState, BlockHeader, GenesisBlock, Transaction}
+import cryptocurrency.blockchain.{Block, BlockChain, BlockChainState, BlockHeader, GenesisBlock, Transaction, Wallet}
 
 import scala.annotation.tailrec
 import cryptocurrency.network.NetworkConfig.{blockReward, defaultMiningDifficulty, miningDifficultyIncreaseRate}
@@ -12,18 +12,18 @@ object Miner {
   // Generates a new Block for the BlockChain. When mining for the solution, the header of the
   // previous block, the candidate nonce and the current timestamp (of the request, not of the attempt) is used
   // to form a hash.
-  def generateNewBlock(state: BlockChainState, pendingTransactions: List[Transaction], reward: Int = blockReward, timestamp: Long = System.currentTimeMillis()): BlockChain = {
+  def generateNewBlock(state: BlockChainState, pendingTransactions: List[Transaction], miner: Wallet, reward: Int = blockReward, timestamp: Long = System.currentTimeMillis()): BlockChain = {
     val diff = calculateDifficulty(state.blockChain)
     val nonce = generateProofOfWork(state.blockChain.header, timestamp, diff)
     val hash = createHash(state.blockChain.header, nonce.toString ++ timestamp.toString)
-    val merkle = createMerkle(pendingTransactions)
-    val header = generateNewBlockHeader(hash, nonce, merkle, diff, reward, timestamp)
+    val merkleRoot = createMerkle(pendingTransactions)
+    val header = generateNewBlockHeader(hash, nonce, miner, merkleRoot, diff, reward, timestamp)
 
     Block(state.blockChain.index + 1, header, pendingTransactions, state.blockChain) :: state.blockChain
   }
 
-  private def generateNewBlockHeader(hash: String, nonce: Long, merkle: String, difficulty: Int, reward: Int, timestamp: Long): BlockHeader = {
-    BlockHeader(hash, nonce, merkle, difficulty, reward, timestamp)
+  private def generateNewBlockHeader(hash: String, nonce: Long, minedBy: Wallet, merkleRoot: String, difficulty: Int, reward: Int, timestamp: Long): BlockHeader = {
+    BlockHeader(hash, nonce, minedBy.address, merkleRoot, difficulty, reward, timestamp)
   }
 
   // Does an attempt to get the proof of work (or nonce) of the previous hash.

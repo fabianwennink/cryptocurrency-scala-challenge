@@ -13,7 +13,7 @@ object WebServer extends NetworkRouting {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
-  val actor: ActorRef = system.actorOf(NetworkActor.props, "cryptocurrency-server")
+  val actor: ActorRef = system.actorOf(NetworkActorEvents.props, "cryptocurrency-server")
 
   def run(): Unit = {
     Http().bindAndHandle(route, httpHost, httpPort)
