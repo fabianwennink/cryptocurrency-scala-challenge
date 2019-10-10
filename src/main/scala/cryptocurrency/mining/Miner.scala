@@ -10,17 +10,17 @@ import cryptocurrency.network.JsonProtocol._
 object Miner {
 
   // Generates a new Block for the BlockChain. When mining for the solution, the header of the
-  // previous block, the candidate nonce and the current timestamp (of the request, not of the attempt) is used
-  // to form a hash.
-  def generateNewBlock(state: BlockChainState, pendingTransactions: List[Transaction], miner: Wallet, reward: Int = blockReward): BlockChain = {
+  // previous block, the difficulty, the candidate nonce and the current timestamp is used to form a hash.
+  // Any pending transaction will be stored in the new block.
+  def generateNewBlock(state: BlockChainState, miner: Wallet, reward: Int = blockReward): Block = {
     val timestamp = System.currentTimeMillis()
-    val diff = calculateDifficulty(state.blockChain)
-    val nonce = generateProofOfWork(state.blockChain.header, timestamp, diff)
-    val hash = createHash(state.blockChain.header, diff.toString ++ nonce.toString ++ timestamp.toString)
-    val merkleRoot = createMerkle(pendingTransactions)
-    val header = generateNewBlockHeader(hash, nonce, miner, merkleRoot, diff, reward, timestamp)
+    val difficulty = calculateDifficulty(state.blockChain)
+    val nonce = generateProofOfWork(state.blockChain.header, timestamp, difficulty)
+    val hash = createHash(state.blockChain.header, difficulty.toString ++ nonce.toString ++ timestamp.toString)
+    val merkleRoot = createMerkle(state.pendingTransactions)
+    val header = generateNewBlockHeader(hash, nonce, miner, merkleRoot, difficulty, reward, timestamp)
 
-    Block(state.blockChain.index + 1, header, pendingTransactions, state.blockChain) :: state.blockChain
+    Block(state.blockChain.index + 1, header, state.pendingTransactions, state.blockChain)
   }
 
   private def generateNewBlockHeader(hash: String, nonce: Long, minedBy: Wallet, merkleRoot: String, difficulty: Int, reward: Int, timestamp: Long): BlockHeader = {
@@ -43,7 +43,7 @@ object Miner {
 
   // Validates if the given nonce belongs to the given hash.
   def validProofOfWork(previousBlock: BlockHeader, nonce: Long, difficulty: Int, timestamp: Long): Boolean = {
-    val candidate = createHash(previousBlock, nonce.toString ++ timestamp.toString)
+    val candidate = createHash(previousBlock, difficulty.toString ++ nonce.toString ++ timestamp.toString)
     (candidate take difficulty) == ("0" * difficulty)
   }
 
@@ -57,7 +57,9 @@ object Miner {
         val previous: BlockChain = b.previous
 
         // Check if the index order is correct and if the hash and nonce are correct
-        if(!(previous.index + 1).equals(b.index) || !validProofOfWork(previous.header, b.header.nonce, b.header.difficulty, b.header.timestamp)) false
+        if(!(previous.index + 1).equals(b.index)
+          || !validProofOfWork(previous.header, b.header.nonce, b.header.difficulty, b.header.timestamp)
+          || createMerkle(b.transactions) != b.header.merkleRoot) false
         else loop(previous)
       case GenesisBlock => true
       case _ => false // If an unknown object is found, return false by default
@@ -76,6 +78,6 @@ object Miner {
   // Hashes the given list of Transactions to form a SHA-256 'merkle root' hash.
   // If the list of Transactions is empty, an empty string will be returned.
   private def createMerkle(transactions: List[Transaction]): String = {
-    if(transactions.nonEmpty) Hasher.hash(transactions.map(_.toJson).toString) else ""
+    if(transactions.nonEmpty) Hasher.hash(transactions.toJson.toString) else ""
   }
 }

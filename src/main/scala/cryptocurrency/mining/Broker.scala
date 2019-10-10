@@ -2,10 +2,7 @@ package cryptocurrency.mining
 
 import cryptocurrency.blockchain._
 import cryptocurrency.network.JsonProtocol._
-import cryptocurrency.network.NetworkConfig.{blockReward, defaultMiningDifficulty, miningDifficultyIncreaseRate}
 import spray.json._
-
-import scala.annotation.tailrec
 
 object Broker {
 

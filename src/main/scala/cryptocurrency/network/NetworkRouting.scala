@@ -10,8 +10,8 @@ import akka.util.Timeout
 import akka.pattern.ask
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import cryptocurrency.blockchain.{BlockChain, Transaction}
-import cryptocurrency.network.NetworkActorEvents.{AddTransactionEvent, AddTransactionSuccessEvent, GetWalletEvent, GetWalletSuccessEvent, GetWalletsEvent, MineEvent, MineSuccessEvent, RegisterWalletEvent, RequestBlockChainEvent, VerifyIntegrityEvent}
+import cryptocurrency.blockchain.Transaction
+import cryptocurrency.network.NetworkActorEvents.{GenerateNewWalletEvent, MineBlockEvent, MineBlockSuccessEvent, RegisterTransactionEvent, RegisterTransactionSuccessEvent, RequestBlockChainEvent, RequestWalletBalanceEvent, RequestWalletBalanceSuccessEvent, RequestsAllWalletsEvent, VerifyChainIntegrityEvent}
 import JsonProtocol._
 import akka.http.scaladsl.model.StatusCodes.Success
 import cryptocurrency.network.JsonProtocol
@@ -25,41 +25,41 @@ trait NetworkRouting extends SprayJsonSupport {
   val route: Route =
     get {
       path("mine") {
-        parameter('address) { address =>
-          val chainFuture: Future[MineSuccessEvent] = (WebServer.actor ? MineEvent(address)).mapTo[MineSuccessEvent]
+        parameter("address") { address =>
+          val chainFuture = (WebServer.actor ? MineBlockEvent(address)).mapTo[MineBlockSuccessEvent]
           onSuccess(chainFuture) { result =>
             complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"${ result.message }"))
           }
         }
       } ~
       path("blockchain") {
-        val chainFuture: Future[BlockChain] = (WebServer.actor ? RequestBlockChainEvent).mapTo[BlockChain]
+        val chainFuture = (WebServer.actor ? RequestBlockChainEvent).mapTo[RequestBlockChainEvent]
         onSuccess(chainFuture) { result =>
-          complete(StatusCodes.OK, result)
+          complete(StatusCodes.OK, result.chain)
         }
       } ~
       path("blockchain" / "verify") {
-        val chainFuture: Future[VerifyIntegrityEvent] = (WebServer.actor ? VerifyIntegrityEvent).mapTo[VerifyIntegrityEvent]
+        val chainFuture = (WebServer.actor ? VerifyChainIntegrityEvent).mapTo[VerifyChainIntegrityEvent]
         onSuccess(chainFuture) { result =>
           complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Chain integrity status: ${ (if( result.status ) "Valid" else "Invalid") }"))
         }
       } ~
       path("wallet") {
-        parameter('address) { address =>
-          val walletFuture: Future[GetWalletSuccessEvent] = (WebServer.actor ? GetWalletEvent(address)).mapTo[GetWalletSuccessEvent]
+        parameter("address") { address =>
+          val walletFuture = (WebServer.actor ? RequestWalletBalanceEvent(address)).mapTo[RequestWalletBalanceSuccessEvent]
           onSuccess(walletFuture) { result =>
             complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Wallet balance: ${ result.balance }"))
           }
         }
       } ~
       path("wallet" / "generate") {
-        val walletFuture: Future[RegisterWalletEvent] = (WebServer.actor ? RegisterWalletEvent).mapTo[RegisterWalletEvent]
+        val walletFuture = (WebServer.actor ? GenerateNewWalletEvent).mapTo[GenerateNewWalletEvent]
         onSuccess(walletFuture) { result =>
           complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Wallet name: ${ result.wallet.address }"))
         }
       } ~
       path("wallet" / "all") {
-        val walletFuture: Future[GetWalletsEvent] = (WebServer.actor ? GetWalletsEvent).mapTo[GetWalletsEvent]
+        val walletFuture = (WebServer.actor ? RequestsAllWalletsEvent).mapTo[RequestsAllWalletsEvent]
         onSuccess(walletFuture) { result =>
           complete(StatusCodes.OK, result.wallets)
         }
@@ -68,7 +68,7 @@ trait NetworkRouting extends SprayJsonSupport {
     post {
       path("transaction") {
         entity(as[Transaction]) { transaction =>
-          val transactionFuture: Future[AddTransactionSuccessEvent] = (WebServer.actor ? AddTransactionEvent(transaction)).mapTo[AddTransactionSuccessEvent]
+          val transactionFuture = (WebServer.actor ? RegisterTransactionEvent(transaction)).mapTo[RegisterTransactionSuccessEvent]
           onSuccess(transactionFuture) { result =>
             complete(StatusCodes.Created, result.message)
           }

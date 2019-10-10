@@ -20,7 +20,7 @@ HTTP GET -  Check the integrity of the chain: http://127.0.0.1:8080/blockchain/v
 
 **Wallet**  
 HTTP GET - Generate a new wallet: http://127.0.0.1:8080/wallet/generate  
-HTTP GET - View the details of a wallet: http://127.0.0.1:8080/wallet?address=WALLET  
+HTTP GET - View the balance of a wallet: http://127.0.0.1:8080/wallet?address=WALLET  
 HTTP GET - See all generated wallets: http://127.0.0.1:8080/wallet/all
 
 **Transaction**  
@@ -30,10 +30,10 @@ Transaction body (`application/json`)
 ```json
 {
     "amount": 10,
-	"receiver":{
+	"receiver": {
 		"address":"crypto-wallet-ADDRESS"
 	},
-	"sender":{
+	"sender": {
 		"address":"crypto-wallet-ADDRESS"
 	}
 }

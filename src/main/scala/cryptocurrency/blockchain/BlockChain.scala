@@ -16,7 +16,6 @@ trait BlockChain {
     case _ => chain // If an invalid block is given, simply return it.
   }
 
-  // Returns the BlockChain as a list
   def toList: List[BlockChain] = {
 
     @tailrec
@@ -45,4 +44,4 @@ object BlockChain {
 
 // Each Block in the sequence is immutable. The overall BlockChainState is mutable in the sense that the whole state
 // will be replaced by the new state - which is a combination of the old BlockChain + the newest Block(Chain).
-case class BlockChainState(blockChain: BlockChain, wallets: List[Wallet])
+case class BlockChainState(blockChain: BlockChain, wallets: List[Wallet], pendingTransactions: List[Transaction])
