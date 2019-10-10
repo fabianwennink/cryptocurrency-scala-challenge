@@ -3,6 +3,8 @@ package cryptocurrency.blockchain
 import cryptocurrency.network.JsonProtocol
 import spray.json._
 
+import scala.annotation.tailrec
+
 trait BlockChain {
 
   val index: Int
@@ -10,8 +12,21 @@ trait BlockChain {
   val transactions: List[Transaction]
 
   def ::(chain: BlockChain): BlockChain = chain match {
-    case block:Block => Block(block.index, block.header, block.transactions ,this)
+    case block:Block => Block(block.index, block.header, block.transactions, this)
     case _ => chain // If an invalid block is given, simply return it.
+  }
+
+  // Returns the BlockChain as a list
+  def toList: List[BlockChain] = {
+
+    @tailrec
+    def loop(chain: BlockChain, list: List[BlockChain]): List[BlockChain] = chain match {
+      case b: Block => loop(b.previous, b :: list)
+      case GenesisBlock => chain :: list
+      case _ => list
+    }
+
+    loop(Seq(this).head, List.empty).reverse
   }
 }
 

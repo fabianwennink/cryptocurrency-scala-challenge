@@ -12,10 +12,11 @@ object Miner {
   // Generates a new Block for the BlockChain. When mining for the solution, the header of the
   // previous block, the candidate nonce and the current timestamp (of the request, not of the attempt) is used
   // to form a hash.
-  def generateNewBlock(state: BlockChainState, pendingTransactions: List[Transaction], miner: Wallet, reward: Int = blockReward, timestamp: Long = System.currentTimeMillis()): BlockChain = {
+  def generateNewBlock(state: BlockChainState, pendingTransactions: List[Transaction], miner: Wallet, reward: Int = blockReward): BlockChain = {
+    val timestamp = System.currentTimeMillis()
     val diff = calculateDifficulty(state.blockChain)
     val nonce = generateProofOfWork(state.blockChain.header, timestamp, diff)
-    val hash = createHash(state.blockChain.header, nonce.toString ++ timestamp.toString)
+    val hash = createHash(state.blockChain.header, diff.toString ++ nonce.toString ++ timestamp.toString)
     val merkleRoot = createMerkle(pendingTransactions)
     val header = generateNewBlockHeader(hash, nonce, miner, merkleRoot, diff, reward, timestamp)
 
@@ -51,39 +52,30 @@ object Miner {
   def validateChain(chain: BlockChain*): Boolean = {
 
     @tailrec
-    def validateChainHelper(chain: BlockChain): Boolean = chain match {
+    def loop(chain: BlockChain): Boolean = chain match {
       case b: Block =>
         val previous: BlockChain = b.previous
 
         // Check if the index order is correct and if the hash and nonce are correct
         if(!(previous.index + 1).equals(b.index) || !validProofOfWork(previous.header, b.header.nonce, b.header.difficulty, b.header.timestamp)) false
-        else validateChainHelper(previous)
+        else loop(previous)
       case GenesisBlock => true
       case _ => false // If an unknown object is found, return false by default
     }
 
-    validateChainHelper(chain.head)
+    loop(chain.head)
   }
-
-//  def getHeaders(chain: BlockChain): List[BlockHeader] = {
-//
-//    @tailrec
-//    def loop(chain: BlockChain, acc: List[BlockHeader]): List[BlockHeader] = chain match {
-//      case b: Block => loop(b.previous, b.header :: acc)
-//      case GenesisBlock | _ => acc
-//    }
-//
-//    loop(chain, List.empty)
-//  }
 
   // Calculates the difficulty based on the amount of blocks present in the chain.
   // With the current implementation, the difficulty increases with every X blocks mined.
-  def calculateDifficulty(chain: BlockChain): Int = Math.floor(chain.index / miningDifficultyIncreaseRate).toInt + defaultMiningDifficulty
+  private def calculateDifficulty(chain: BlockChain): Int = Math.floor(chain.index / miningDifficultyIncreaseRate).toInt + defaultMiningDifficulty
 
-  def createHash(block: BlockHeader, data: String): String = Crypto.hash(block.toJson.toString ++ data)
+  // Hashes the given BlockHeader and remaining Block data to form a SHA-256 hash.
+  private def createHash(block: BlockHeader, data: String): String = Hasher.hash(block.toJson.toString ++ data)
 
-  def createMerkle(transactions: List[Transaction]): String = {
-    if(transactions.nonEmpty) Crypto.hash(transactions.map(_.toJson).toString)
-    else ""
+  // Hashes the given list of Transactions to form a SHA-256 'merkle root' hash.
+  // If the list of Transactions is empty, an empty string will be returned.
+  private def createMerkle(transactions: List[Transaction]): String = {
+    if(transactions.nonEmpty) Hasher.hash(transactions.map(_.toJson).toString) else ""
   }
 }

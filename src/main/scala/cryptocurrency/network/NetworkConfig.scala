@@ -12,10 +12,7 @@ object NetworkConfig {
 
   // Mining
   implicit val miningDifficultyIncreaseRate: Int = config.getInt("mining.difficulty-increase-rate")
-  implicit val defaultMiningDifficulty: Int = {
-    val option = config.getInt("mining.default-difficulty");
-    if(option < 1) 1 else option
-  }
+  implicit val defaultMiningDifficulty: Int = config.getInt("mining.default-difficulty")
   implicit val blockReward: Int = config.getInt("mining.block-reward")
 
   // Wallet

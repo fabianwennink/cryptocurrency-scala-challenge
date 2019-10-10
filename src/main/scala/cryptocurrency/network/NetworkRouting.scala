@@ -11,8 +11,9 @@ import akka.pattern.ask
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import cryptocurrency.blockchain.{BlockChain, Transaction}
-import cryptocurrency.network.NetworkActorEvents.{AddTransactionEvent, AddTransactionSuccessEvent, GetWalletsEvent, MineEvent, MineSuccessEvent, RegisterWalletEvent, RequestBlockChainEvent, VerifyIntegrityEvent}
+import cryptocurrency.network.NetworkActorEvents.{AddTransactionEvent, AddTransactionSuccessEvent, GetWalletEvent, GetWalletSuccessEvent, GetWalletsEvent, MineEvent, MineSuccessEvent, RegisterWalletEvent, RequestBlockChainEvent, VerifyIntegrityEvent}
 import JsonProtocol._
+import akka.http.scaladsl.model.StatusCodes.Success
 import cryptocurrency.network.JsonProtocol
 import spray.json._
 
@@ -45,7 +46,10 @@ trait NetworkRouting extends SprayJsonSupport {
       } ~
       path("wallet") {
         parameter('address) { address =>
-          complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Not yet implemented"))
+          val walletFuture: Future[GetWalletSuccessEvent] = (WebServer.actor ? GetWalletEvent(address)).mapTo[GetWalletSuccessEvent]
+          onSuccess(walletFuture) { result =>
+            complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Wallet balance: ${ result.balance }"))
+          }
         }
       } ~
       path("wallet" / "generate") {
