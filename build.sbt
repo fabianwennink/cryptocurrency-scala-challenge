@@ -1,5 +1,5 @@
-name := "learning-scala"
-version := "0.1"
+name := "scala-cryptocurrency"
+version := "1.0.0"
 scalaVersion := "2.13.0"
 
 lazy val akkaVersion = "2.5.23"
